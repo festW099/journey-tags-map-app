@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 
 class Settings extends StatelessWidget {
   const Settings({super.key});
+
+  Future<void> _resetMapPosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('map_lat');
+    await prefs.remove('map_lng');
+    await prefs.remove('map_zoom');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,6 +21,7 @@ class Settings extends StatelessWidget {
         title: const Text('Настройки'),
         backgroundColor: Colors.amber[700],
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: ListView(
         children: [
@@ -43,12 +52,15 @@ class Settings extends StatelessWidget {
               value: isDarkMode,
               onChanged: (bool value) {
                 isDarkModeNotifier.value = value;
+                MyApp.saveTheme(value);
               },
               activeColor: Colors.amber[700],
               activeTrackColor: Colors.amber[200],
             ),
             onTap: () {
-              isDarkModeNotifier.value = !isDarkMode;
+              final newValue = !isDarkMode;
+              isDarkModeNotifier.value = newValue;
+              MyApp.saveTheme(newValue);
             },
           ),
 
@@ -57,6 +69,7 @@ class Settings extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () {
                 isDarkModeNotifier.value = false;
+                MyApp.saveTheme(false);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Тема сброшена на светлую'),
@@ -67,11 +80,40 @@ class Settings extends StatelessWidget {
               icon: Icon(Icons.refresh, color: Colors.amber[700]),
               label: const Text('Сбросить на светлую тему'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[200],
+                backgroundColor: Colors.amber[700],
                 foregroundColor: Colors.black,
                 minimumSize: const Size(double.infinity, 48),
               ),
             ),
+          ),
+
+          const Divider(height: 32),
+
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Карта',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          ListTile(
+            leading: Icon(Icons.map, color: Colors.amber[700]),
+            title: const Text('Сбросить положение карты'),
+            subtitle: const Text('Вернуться на Москву'),
+            trailing: Icon(Icons.refresh, color: Colors.amber[700]),
+            onTap: () async {
+              await _resetMapPosition();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Положение карты сброшено'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
           ),
 
           const Divider(height: 32),
@@ -112,18 +154,6 @@ class Settings extends StatelessWidget {
           ),
 
           ListTile(
-            leading: Icon(Icons.volume_up, color: Colors.amber[700]),
-            title: const Text('Звук'),
-            subtitle: const Text('Включён'),
-            trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.amber[700]),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Настройки звука в разработке')),
-              );
-            },
-          ),
-
-          ListTile(
             leading: Icon(Icons.info, color: Colors.amber[700]),
             title: const Text('О приложении'),
             subtitle: const Text('Версия 1.0.0'),
@@ -136,7 +166,7 @@ class Settings extends StatelessWidget {
                     title: const Text('О приложении'),
                     content: const Text(
                       'Версия: 1.0.0\n'
-                      'Разработчик: https://github.com/festW099\n'
+                      'Разработчик: V\n'
                     ),
                     actions: [
                       TextButton(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/map.dart';
 import 'screens/bookmarks.dart';
 import 'screens/home.dart';
@@ -7,6 +8,7 @@ import 'screens/settings.dart';
 import 'screens/splash.dart';
 
 final ValueNotifier<bool> isDarkModeNotifier = ValueNotifier<bool>(false);
+final String _themeKey = 'is_dark_mode';
 
 void main() {
   runApp(const MyApp());
@@ -17,40 +19,66 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: isDarkModeNotifier,
-      builder: (context, isDarkMode, child) {
-        return MaterialApp(
-          title: 'Map Navigator',
-          theme: ThemeData(
-            brightness: Brightness.light,
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.amber),
-            useMaterial3: true,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.amber,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-          ),
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.amber,
-              brightness: Brightness.dark,
-            ),
-            useMaterial3: true,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.amber,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-          ),
-          themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          home: const SplashScreen(),
-          debugShowCheckedModeBanner: false,
+    return FutureBuilder<bool>(
+      future: _loadTheme(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          isDarkModeNotifier.value = snapshot.data!;
+        }
+        return ValueListenableBuilder<bool>(
+          valueListenable: isDarkModeNotifier,
+          builder: (context, isDarkMode, child) {
+            return MaterialApp(
+              title: 'Map Navigator',
+              theme: ThemeData(
+                brightness: Brightness.light,
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.amber),
+                useMaterial3: true,
+                appBarTheme: const AppBarTheme(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                ),
+              ),
+              darkTheme: ThemeData(
+                brightness: Brightness.dark,
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: Colors.amber,
+                  brightness: Brightness.dark,
+                ),
+                useMaterial3: true,
+                appBarTheme: const AppBarTheme(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                ),
+              ),
+              themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+              home: const SplashScreen(),
+              debugShowCheckedModeBanner: false,
+            );
+          },
         );
       },
     );
+  }
+
+  Future<bool> _loadTheme() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_themeKey) ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<void> saveTheme(bool isDark) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_themeKey, isDark);
+    } catch (e) {
+      debugPrint('Ошибка сохранения темы: $e');
+    }
   }
 }
 
